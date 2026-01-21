@@ -1,0 +1,151 @@
+﻿@model SEYRİ_ALA.Models.City
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = Model.Name + " Detayları";
+    var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    bool isFavorite = Model.Favorites != null && Model.Favorites.Any(f => f.UserId.ToString() == currentUserId);
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+<div class="container mt-5">
+
+    @if (TempData["FavoriteMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-radius: 15px;">
+            <i class="fas fa-check-circle me-2"></i> @TempData["FavoriteMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-4 fw-bold text-primary">@Model.Name</h1>
+            <p class="text-muted"><i class="fas fa-map-marker-alt"></i> Keşfedilmeyi bekleyen bir rota...</p>
+        </div>
+
+        @if (User.Identity.IsAuthenticated) @* oturum açılmıs ise *@
+        { 
+            <form asp-action="ToggleFavorite" method="post">
+                <input type="hidden" name="cityId" value="@Model.Id" />
+                <button type="submit" class="btn btn-lg shadow-sm @(isFavorite ? "text-danger" : "text-muted")"
+                        style="border-radius: 15px; border: 1px solid #ddd; background: white; transition: all 0.3s;">
+                    <i class="@(isFavorite ? "fas" : "far") fa-heart fa-2x"></i>
+                    <span class="ms-2 fw-bold">@(isFavorite ? "Favorilerden Çıkar" : "Favorilere Ekle")</span>
+                </button>
+            </form>
+        }
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7 mb-4">
+            <div class="col-lg-7 mb-4">
+                <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden; background-color: #000 !important;">
+
+                    <img src="https://loremflickr.com/800/500/@Model.Name,travel/all"
+                         class="img-fluid w-100"
+                         alt="@Model.Name"
+                         style="height: 500px; object-fit: cover; display: block;">
+                </div>
+                   @*  farklı ve doğru resimler için buradaki bağlantı şart 
+                   ve Bu kısım Asla değişmemeli düzgün görsellerin tek şartı bu kod  *@
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 25px; background: #f8f9fa;">
+                <h4 class="fw-bold mb-4">Şehir Analizi</h4>
+                <div class="mb-3">
+                    <label class="d-flex justify-content-between">
+                        <span>📜 Tarihi Doku</span>
+                        <span class="fw-bold">@Model.HistoryScore/10</span>
+                    </label>
+          
+              
+                    <div class="progress" style="height: 10px; border-radius: 10px;">
+                        <div class="progress-bar bg-warning" style="width: @(Model.HistoryScore * 10)%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="d-flex justify-content-between">
+                        <span>🌲 Doğal Güzellik</span>
+                        <span class="fw-bold">@Model.NatureScore/10</span>
+                    </label>
+                    <div class="progress" style="height: 10px; border-radius: 10px;">
+                        <div class="progress-bar bg-success" style="width: @(Model.NatureScore * 10)%"></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="d-flex justify-content-between">
+                        <span>🍲 Gastronomi</span>
+                        <span class="fw-bold">@Model.FoodScore/10</span>
+                    </label>
+                    <div class="progress" style="height: 10px; border-radius: 10px;">
+                        <div class="progress-bar bg-danger" style="width: @(Model.FoodScore * 10)%"></div>
+                    </div>
+                </div>
+                <h5 class="fw-bold">Hakkında</h5>
+                <p class="text-secondary" style="line-height: 1.6;">@Model.Description</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="fw-bold mb-4">Kullanıcı Yorumları (@Model.Comments.Count)</h3>
+
+            @if (User.Identity.IsAuthenticated)
+            {
+                <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
+                    <h5 class="fw-bold mb-3">Sen de Deneyimlerini Paylaş</h5>
+                    <form asp-action="AddComment" method="post">
+                        <input type="hidden" name="CityId" value="@Model.Id" />
+                        <div class="mb-3">
+                            <textarea name="Content" class="form-control border-0 bg-light" rows="3" placeholder="Yorumunu buraya yaz..." style="border-radius: 15px;"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary px-4 shadow" style="border-radius: 10px;">Yorum Gönder</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info" style="border-radius: 15px;">
+                    Yorum yapmak ve favorilere eklemek için lütfen giriş yapın.
+                </div>
+            }
+
+            <div class="comment-list">
+                @if (Model.Comments != null && Model.Comments.Any())
+                {
+                    @foreach (var comment in Model.Comments.OrderByDescending(c => c.Id))
+                    {
+                        <div class="card border-0 shadow-sm p-3 mb-3" style="border-radius: 15px; background: #fff;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="fw-bold text-primary">@(comment.User?.FullName ?? "Anonim Kullanıcı")</span>
+                                    <small class="text-muted ms-2">@comment.CreatedAt.ToShortDateString()</small>
+                                </div>
+ 
+                              @*  claim metodu ile sadece kendi yorumunu silebilirsin *@
+                                @if (User.Identity.IsAuthenticated && User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == comment.UserId.ToString())
+                                {
+                                    <form asp-action="DeleteComment" asp-route-id="@comment.Id" method="post" onsubmit="return confirm('Yorumu silmek istediğinize emin misiniz?')">
+                                        <button type="submit" class="btn btn-sm text-danger p-0 border-0 bg-transparent">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                            <p class="mb-0 text-secondary">@comment.Text</p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted italic">Henüz yorum yapılmamış. İlk yorumu sen yap!</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

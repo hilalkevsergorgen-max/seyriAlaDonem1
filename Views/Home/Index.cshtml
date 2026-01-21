@@ -1,0 +1,182 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model List<SEYRİ_ALA.Models.City>
+
+   @*  dinamik bölgelere ayırma işlemi için fonksiyon *@
+ @functions {
+    string GetRegion(string cityName)
+    {
+        string[] marmara = { "İstanbul", "Edirne", "Çanakkale", "Bursa", "Kocaeli", "Sakarya", "Tekirdağ", "Balıkesir", "Yalova", "Kırklareli", "Bilecik" };
+        string[] ege = { "İzmir", "Aydın", "Muğla", "Manisa", "Denizli", "Afyonkarahisar", "Kütahya", "Uşak" };
+        string[] akdeniz = { "Antalya", "Adana", "Mersin", "Hatay", "Isparta", "Burdur", "Osmaniye", "Kahramanmaraş" };
+        string[] icAnadolu = { "Ankara", "Konya", "Kayseri", "Eskişehir", "Sivas", "Kırıkkale", "Aksaray", "Karaman", "Kırşehir", "Niğde", "Nevşehir", "Yozgat", "Çankırı" };
+        string[] karadeniz = { "Trabzon", "Samsun", "Ordu", "Rize", "Giresun", "Artvin", "Sinop", "Kastamonu", "Bolu", "Düzce", "Zonguldak", "Tokat", "Gümüşhane", "Bayburt", "Bartın", "Karabük", "Amasya", "Çorum" };
+        string[] doguAnadolu = { "Erzurum", "Malatya", "Elazığ", "Van", "Erzincan", "Kars", "Hakkari", "Muş", "Bitlis", "Ağrı", "Iğdır", "Ardahan", "Tunceli", "Bingöl" };
+        string[] guneyDogu = { "Gaziantep", "Şanlıurfa", "Diyarbakır", "Mardin", "Adıyaman", "Batman", "Siirt", "Şırnak", "Kilis" };
+
+        if (marmara.Contains(cityName)) return "Marmara";
+        if (ege.Contains(cityName)) return "Ege";
+        if (akdeniz.Contains(cityName)) return "Akdeniz";
+        if (icAnadolu.Contains(cityName)) return "İç Anadolu";
+        if (karadeniz.Contains(cityName)) return "Karadeniz";
+        if (doguAnadolu.Contains(cityName)) return "Doğu Anadolu";
+        if (guneyDogu.Contains(cityName)) return "Güneydoğu";
+        return "Tümü";
+    } 
+}
+
+@{
+    ViewData["Title"] = "Seyri Ala - " + Localizer["Baslık"];
+}
+
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold text-primary">@Localizer["ROTAMIZ NEDİR KAPTAN?"]</h1>
+       
+    </div>
+
+    <div class="row justify-content-center">  
+        <div class="col-lg-8 mb-4">
+            <div id="map" style="height: 450px; width: 100%; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid #fff;"></div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm p-4" style="border-radius: 20px; background: #ffffff; height: 100%;">
+                <h4 class="fw-bold mb-3">@Localizer["FİLTRELEME"]</h4>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="checkHistory">
+                    <label class="form-check-label" for="checkHistory">📜 @Localizer["Tarihi"]</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="checkNature">
+                    <label class="form-check-label" for="checkNature">🌲 @Localizer["Doga"]</label>
+                </div>
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" id="checkFood">
+                    <label class="form-check-label" for="checkFood">🍲 @Localizer["Yemek"]</label>
+                </div>
+
+                <button class="btn btn-primary btn-lg w-100 shadow-sm" onclick="planla()" style="border-radius: 12px; margin-top: auto;">
+                    ✨ @Localizer["Rota oluştur"]
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center my-4"> @* butonlar ve bölgeler seçilen bölgeye göre diğer şehirler gizleniyor *@
+        <div class="btn-group flex-wrap shadow-sm" role="group" style="border-radius: 15px; overflow: hidden;">
+            <button type="button" class="btn btn-outline-primary active" onclick="filterRegion('Tümü', this)">Tümü</button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterRegion('Marmara', this)">Marmara</button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterRegion('Ege', this)">Ege</button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterRegion('Akdeniz', this)">Akdeniz</button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterRegion('İç Anadolu', this)">İç Anadolu</button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterRegion('Karadeniz', this)">Karadeniz</button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterRegion('Doğu Anadolu', this)">Doğu Anadolu</button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterRegion('Güneydoğu', this)">Güneydoğu</button>
+        </div>
+    </div>
+
+    <div class="mt-2">
+        <h5 class="fw-bold mb-3 px-2">@Localizer["ŞEHİRLERİM"]</h5>
+
+        <div id="city-container" class="d-flex overflow-auto pb-3 custom-scrollbar" style="gap: 15px; scroll-behavior: smooth;">
+            @foreach (var city in Model)
+            {
+                <div class="card border-0 shadow-sm flex-shrink-0 city-card"
+                                data-region="@GetRegion(city.Name)"
+                                style="width: 220px; border-radius: 15px; cursor: pointer; transition: transform 0.2s;"
+                                onclick="focusCity(@city.Latitude.ToString().Replace(',', '.'), @city.Longitude.ToString().Replace(',', '.'), '@city.Name', '@city.Description', @city.Id)">
+
+                    <img src="https://loremflickr.com/400/250/@city.Name,travel/all"
+                                      class="card-img-top"
+                                      style="height: 140px; object-fit: cover; border-radius: 15px 15px 0 0;"
+                                      alt="@city.Name">
+
+                    <div class="card-body p-3 text-center bg-dark" style="border-radius: 0 0 15px 15px;">
+                        <h5 class="fw-bold mb-2 text-white" style="font-size: 1.1rem;">@city.Name</h5>
+                        <p class="text-light small mb-0 text-truncate" style="font-size: 0.8rem; opacity: 0.8;">
+                            @city.Description
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+        .city-card:hover {
+                transform: translateY(-5px);
+
+    }
+
+        .custom-scrollbar::-webkit-scrollbar {
+                height: 6px;
+
+    }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #dee2e6;
+                border-radius: 10px;
+
+    }
+
+        .btn-group .btn.active {
+                background-color: #0d6efd;
+                color: white;
+
+    }
+</style>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    var map = L.map('map').setView([39.9334, 32.8597], 6); //türkiye merkezli açılması
+    var currentMarker = null;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    function focusCity(lat, lng, name, desc, id) {
+        if (currentMarker) { map.removeLayer(currentMarker); }
+
+        map.flyTo([lat, lng], 11, { animate: true, duration: 1.5 });
+
+        // 4. DEĞİŞİKLİK BURADA: Javascript içindeki butona da Localizer ekledik
+        currentMarker = L.marker([lat, lng]).addTo(map) //veri tabanından gelen her şehir için bir işaretçi atadık 
+            .bindPopup(`
+                <div style="text-align:center; color: #333;">
+                    <b style="font-size: 16px;">${name}</b><br>
+                    <small>${desc}</small><br>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="detayaGit(${id})">@Localizer["DetayButon"]</button>
+                </div>
+            `)
+            .openPopup();
+    }
+
+    function detayaGit(id) {
+        if (id) {
+            window.location.href = "/Home/Details/" + id;
+        } else {
+            alert("Şehir ID bulunamadı!");
+        }
+    }
+
+    function planla() { alert("Seçtiğin kriterlere göre rota oluşturma özelliği çok yakında!"); }
+
+    function filterRegion(region, btn) {
+        document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        document.querySelectorAll('.city-card').forEach(card => {
+            if (region === 'Tümü' || card.getAttribute('data-region') === region) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script> 
