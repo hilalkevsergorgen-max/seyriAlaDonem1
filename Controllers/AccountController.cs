@@ -1,51 +1,47 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SEYRİ_ALA.Data;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+using SEYRİ_ALA.Data.Interfaces;
 using SEYRİ_ALA.Models;
-using System.Linq;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
+
 namespace SEYRİ_ALA.Controllers
 {
     public class AccountController : Controller
     {
-        //  veritabanı bağlantısını ekliyoruz
-        private readonly ApplicationDbContext _context;
+        private readonly IUserRepository _userRepository;
 
-        public AccountController(ApplicationDbContext context)
+        public AccountController(IUserRepository userRepository)
         {
-            _context = context;
+            _userRepository = userRepository;
         }
 
-        //  boş form yapıları (Aynen korundu)
         [HttpGet]
         public IActionResult Register() => View(new RegisterViewModel());
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            //  validation (doğrulama) yapısını koruyoruz
             if (!ModelState.IsValid) return View(model);
 
-            // Kayıt Mantığı - Veritabanı kontrolü ve EF Core ile yazma
-            if (_context.Users.Any(u => u.Email == model.Email))
+            // Veritabanı kontrolü repository üzerinden yapılıyor
+            var existingUser = await _userRepository.GetByEmailAsync(model.Email);
+            if (existingUser != null)
             {
                 ViewBag.Message = "❌ Bu e-posta zaten kayıtlı.";
                 return View(model);
             }
-  
+
             var user = new User
             {
-                FullName = model.FullName, // Burayı ekledik, veritabanına isim gitmeli
+                FullName = model.FullName,
                 Email = model.Email,
-                // BCrypt ile şifreyi hashliyoruz:
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
-                Role = "User" // Varsayılan rol
+                Role = "User"
             };
-           
-            _context.Users.Add(user);
-            _context.SaveChanges();
+
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             return RedirectToAction("Login");
         }
@@ -59,19 +55,17 @@ namespace SEYRİ_ALA.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            // 1. Önce kullanıcıyı e-posta ile bul
-            var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
+            var user = await _userRepository.GetByEmailAsync(model.Email);
 
-            // 2. Kullanıcı varsa VE şifresi BCrypt ile doğrulanıyorsa içeri al
             if (user != null && BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
             {
                 var claims = new List<Claim>
-                  {
-                           new Claim(ClaimTypes.Name, user.Email),
-                           new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                           new Claim(ClaimTypes.Role, user.Role), // Rol Bazlı Erişim
-                           new Claim("FullName", user.FullName ?? "") // Null kontrolü eklendi
-                   };
+                {
+                    new Claim(ClaimTypes.Name, user.Email),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Role, user.Role),
+                    new Claim("FullName", user.FullName ?? "")
+                };
 
                 var claimsIdentity = new ClaimsIdentity(claims, "CookieAuth");
                 var authProperties = new AuthenticationProperties { IsPersistent = model.RememberMe };
@@ -84,6 +78,7 @@ namespace SEYRİ_ALA.Controllers
             ViewBag.Message = "❌ Hatalı giriş bilgileri.";
             return View(model);
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()

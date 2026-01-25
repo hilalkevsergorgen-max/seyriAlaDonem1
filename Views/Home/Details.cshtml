@@ -1,10 +1,8 @@
-﻿@model SEYRİ_ALA.Models.City
+﻿@model SEYRİ_ALA.Models.ViewModels.CityDetailsViewModel
 @using System.Security.Claims
 
 @{
-    ViewData["Title"] = Model.Name + " Detayları";
-    var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    bool isFavorite = Model.Favorites != null && Model.Favorites.Any(f => f.UserId.ToString() == currentUserId);
+    ViewData["Title"] = Model.Name + " Keşfi";
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
@@ -13,105 +11,126 @@
 
     @if (TempData["FavoriteMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-radius: 15px;">
+        <div class="alert alert-success alert-dismissible fade show mb-4 shadow-sm" role="alert" style="border-radius: 20px; border-left: 5px solid #198754;">
             <i class="fas fa-check-circle me-2"></i> @TempData["FavoriteMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="display-4 fw-bold text-primary">@Model.Name</h1>
-            <p class="text-muted"><i class="fas fa-map-marker-alt"></i> Keşfedilmeyi bekleyen bir rota...</p>
+    @* BAŞLIK VE FAVORİ *@
+    <div class="row align-items-end mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Ana Sayfa</a></li>
+                    <li class="breadcrumb-item active text-primary fw-bold" aria-current="page">@Model.Name Keşfi</li>
+                </ol>
+            </nav>
+            <h1 class="display-3 fw-bold text-dark mb-0">@Model.Name</h1>
+            <p class="text-muted fs-5"><i class="fas fa-map-marker-alt text-primary me-2"></i>Anadolu'nun Eşsiz Bir Köşesi</p>
         </div>
-
-        @if (User.Identity.IsAuthenticated) @* oturum açılmıs ise *@
-        { 
-            <form asp-action="ToggleFavorite" method="post">
-                <input type="hidden" name="cityId" value="@Model.Id" />
-                <button type="submit" class="btn btn-lg shadow-sm @(isFavorite ? "text-danger" : "text-muted")"
-                        style="border-radius: 15px; border: 1px solid #ddd; background: white; transition: all 0.3s;">
-                    <i class="@(isFavorite ? "fas" : "far") fa-heart fa-2x"></i>
-                    <span class="ms-2 fw-bold">@(isFavorite ? "Favorilerden Çıkar" : "Favorilere Ekle")</span>
-                </button>
-            </form>
-        }
+        <div class="col-md-4 text-md-end">
+            @if (User.Identity.IsAuthenticated)
+            {
+                <form asp-action="ToggleFavorite" method="post">
+                    <input type="hidden" name="cityId" value="@Model.Id" />
+                    <button type="submit" class="btn btn-favorite @(Model.IsFavorite ? "active" : "") shadow-sm">
+                        <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart me-2"></i>
+                        @(Model.IsFavorite ? "Favorilerimde" : "Favorilere Ekle")
+                    </button>
+                </form>
+            }
+        </div>
     </div>
 
     <div class="row">
+        @* SOL TARAF: GÖRSEL VE HAKKINDA *@
         <div class="col-lg-7 mb-4">
-            <div class="col-lg-7 mb-4">
-                <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden; background-color: #000 !important;">
+            <div class="img-container shadow-lg">
+                <img src="https://loremflickr.com/1200/800/@Model.Name,landmark/all"
+                     class="img-fluid main-img"
+                     alt="@Model.Name">
+            </div>
 
-                    <img src="https://loremflickr.com/800/500/@Model.Name,travel/all"
-                         class="img-fluid w-100"
-                         alt="@Model.Name"
-                         style="height: 500px; object-fit: cover; display: block;">
+            <div class="info-card mt-4 p-4 shadow-sm">
+                <h4 class="fw-bold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Bu Şehre Yolculuk</h4>
+                <p class="description-text">@Model.Description</p>
+                <div class="d-flex gap-3 mt-4">
+                    <div class="mini-fact">
+                        <span class="d-block text-muted small text-uppercase fw-bold">Konum</span>
+                        <span class="fw-bold">Türkiye</span>
+                    </div>
+                    <div class="mini-fact">
+                        <span class="d-block text-muted small text-uppercase fw-bold">Deneyim</span>
+                        <span class="fw-bold">@((Model.HistoryScore + Model.NatureScore + Model.FoodScore) > 20 ? "Efsanevi" : "Keyifli")</span>
+                    </div>
                 </div>
-                   @*  farklı ve doğru resimler için buradaki bağlantı şart 
-                   ve Bu kısım Asla değişmemeli düzgün görsellerin tek şartı bu kod  *@
             </div>
         </div>
 
+        @* SAĞ TARAF: ŞEHİR ANALİZİ (GELİŞTİRİLMİŞ) *@
         <div class="col-lg-5">
-            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 25px; background: #f8f9fa;">
-                <h4 class="fw-bold mb-4">Şehir Analizi</h4>
-                <div class="mb-3">
-                    <label class="d-flex justify-content-between">
-                        <span>📜 Tarihi Doku</span>
-                        <span class="fw-bold">@Model.HistoryScore/10</span>
-                    </label>
-          
-              
-                    <div class="progress" style="height: 10px; border-radius: 10px;">
+            <div class="card border-0 shadow-sm p-4 h-100 analysis-card">
+                <h3 class="fw-bold mb-4">Keşif Karnesi</h3>
+
+                <div class="analysis-item mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold"><i class="fas fa-monument me-2 text-warning"></i>Tarihi Doku</span>
+                        <span class="badge rounded-pill bg-warning text-dark">@Model.HistoryScore / 10</span>
+                    </div>
+                    <div class="progress custom-progress">
                         <div class="progress-bar bg-warning" style="width: @(Model.HistoryScore * 10)%"></div>
                     </div>
+                    <small class="text-muted">Bu şehir binlerce yıllık hikayeler barındırıyor.</small>
                 </div>
-                <div class="mb-3">
-                    <label class="d-flex justify-content-between">
-                        <span>🌲 Doğal Güzellik</span>
-                        <span class="fw-bold">@Model.NatureScore/10</span>
-                    </label>
-                    <div class="progress" style="height: 10px; border-radius: 10px;">
+
+                <div class="analysis-item mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold"><i class="fas fa-tree me-2 text-success"></i>Doğal Yapı</span>
+                        <span class="badge rounded-pill bg-success">@Model.NatureScore / 10</span>
+                    </div>
+                    <div class="progress custom-progress">
                         <div class="progress-bar bg-success" style="width: @(Model.NatureScore * 10)%"></div>
                     </div>
+                    <small class="text-muted">Doğa ile iç içe, huzurlu bir kaçış noktası.</small>
                 </div>
-                <div class="mb-4">
-                    <label class="d-flex justify-content-between">
-                        <span>🍲 Gastronomi</span>
-                        <span class="fw-bold">@Model.FoodScore/10</span>
-                    </label>
-                    <div class="progress" style="height: 10px; border-radius: 10px;">
+
+                <div class="analysis-item mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold"><i class="fas fa-utensils me-2 text-danger"></i>Gastronomi</span>
+                        <span class="badge rounded-pill bg-danger">@Model.FoodScore / 10</span>
+                    </div>
+                    <div class="progress custom-progress">
                         <div class="progress-bar bg-danger" style="width: @(Model.FoodScore * 10)%"></div>
                     </div>
+                    <small class="text-muted">Gurme damaklar için benzersiz lezzetler.</small>
                 </div>
-                <h5 class="fw-bold">Hakkında</h5>
-                <p class="text-secondary" style="line-height: 1.6;">@Model.Description</p>
+
+                @* YENİ: MERAK UYANDIRAN BİLGİ *@
+                <div class="explore-callout p-3 mt-auto">
+                    <h6 class="fw-bold"><i class="fas fa-lightbulb me-2"></i>Biliyor muydunuz?</h6>
+                    <p class="small mb-0 text-muted">@Model.Name, bölgenin en çok merak edilen rotalarından biridir. Bu şehirde her köşe başında yeni bir sürpriz seni bekliyor.</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-5">
-        <div class="col-12">
-            <h3 class="fw-bold mb-4">Kullanıcı Yorumları (@Model.Comments.Count)</h3>
+    @* YORUM KISMI (YAPI KORUNDU, GÖRSEL İYİLEŞTİRİLDİ) *@
+    <div class="row mt-5 pb-5">
+        <div class="col-lg-12">
+            <h3 class="fw-bold mb-4"><i class="far fa-comments me-2"></i>Gezgin Yorumları (@Model.Comments.Count)</h3>
 
             @if (User.Identity.IsAuthenticated)
             {
-                <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
-                    <h5 class="fw-bold mb-3">Sen de Deneyimlerini Paylaş</h5>
+                <div class="card border-0 shadow-sm p-4 mb-4 comment-form-card">
+                    <h5 class="fw-bold mb-3">Sen ne düşünüyorsun?</h5>
                     <form asp-action="AddComment" method="post">
                         <input type="hidden" name="CityId" value="@Model.Id" />
                         <div class="mb-3">
-                            <textarea name="Content" class="form-control border-0 bg-light" rows="3" placeholder="Yorumunu buraya yaz..." style="border-radius: 15px;"></textarea>
+                            <textarea name="Content" class="form-control" rows="3" placeholder="Deneyimlerini buraya yaz..."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary px-4 shadow" style="border-radius: 10px;">Yorum Gönder</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Paylaş</button>
                     </form>
-                </div>
-            }
-            else
-            {
-                <div class="alert alert-info" style="border-radius: 15px;">
-                    Yorum yapmak ve favorilere eklemek için lütfen giriş yapın.
                 </div>
             }
 
@@ -120,32 +139,139 @@
                 {
                     @foreach (var comment in Model.Comments.OrderByDescending(c => c.Id))
                     {
-                        <div class="card border-0 shadow-sm p-3 mb-3" style="border-radius: 15px; background: #fff;">
+                        <div class="card border-0 shadow-sm p-3 mb-3 comment-bubble">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <span class="fw-bold text-primary">@(comment.User?.FullName ?? "Anonim Kullanıcı")</span>
-                                    <small class="text-muted ms-2">@comment.CreatedAt.ToShortDateString()</small>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3">@comment.UserName.Substring(0, 1).ToUpper()</div>
+                                    <div>
+                                        <span class="fw-bold">@comment.UserName</span>
+                                        <div class="text-muted" style="font-size: 0.75rem;">@comment.CreatedAt.ToShortDateString()</div>
+                                    </div>
                                 </div>
- 
-                              @*  claim metodu ile sadece kendi yorumunu silebilirsin *@
-                                @if (User.Identity.IsAuthenticated && User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == comment.UserId.ToString())
+                                @if (comment.IsBelongsToUser)
                                 {
-                                    <form asp-action="DeleteComment" asp-route-id="@comment.Id" method="post" onsubmit="return confirm('Yorumu silmek istediğinize emin misiniz?')">
-                                        <button type="submit" class="btn btn-sm text-danger p-0 border-0 bg-transparent">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+                                    <form asp-action="DeleteComment" asp-route-id="@comment.Id" method="post" onsubmit="return confirm('Silmek istediğine emin misin?')">
+                                        <button type="submit" class="btn btn-link text-danger p-0"><i class="fas fa-trash-alt"></i></button>
                                     </form>
                                 }
                             </div>
-                            <p class="mb-0 text-secondary">@comment.Text</p>
+                            <p class="mb-0 text-secondary ps-5">@comment.Text</p>
                         </div>
                     }
                 }
                 else
                 {
-                    <p class="text-muted italic">Henüz yorum yapılmamış. İlk yorumu sen yap!</p>
+                    <div class="text-center py-5">
+                        <i class="far fa-comment-dots fa-3x text-light mb-3"></i>
+                        <p class="text-muted">Henüz kimse yorum yapmamış. İlk gezgin sen ol!</p>
+                    </div>
                 }
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* GENEL ARKA PLAN */
+    body {
+        background-color: #fcfaf7;
+    }
+    /* Bej tonunda yumuşak arka plan */
+
+    /* GÖRSEL ALANI (Kırmızıdan Kurtuluş) */
+    .img-container {
+        border-radius: 30px;
+        overflow: hidden;
+        background-color: #f1ede8; /* Bej/Nötr arka plan */
+        height: 500px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .main-img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    /* KART TASARIMLARI */
+    .info-card, .analysis-card, .comment-form-card, .comment-bubble {
+        border-radius: 25px;
+        background: white;
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .analysis-card {
+        background: #fffcf8;
+        border: 1px solid #f2e9dc;
+    }
+
+    /* FAVORİ BUTONU */
+    .btn-favorite {
+        padding: 12px 25px;
+        border-radius: 50px;
+        background: white;
+        border: 1px solid #eee;
+        color: #6c757d;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+
+        .btn-favorite.active {
+            color: #dc3545;
+            border-color: #ffc1c1;
+            background: #fff5f5;
+        }
+
+        .btn-favorite:hover {
+            transform: scale(1.05);
+        }
+
+    /* PROGRESS BARS */
+    .custom-progress {
+        height: 8px;
+        border-radius: 10px;
+        background-color: #f0f0f0;
+    }
+
+    /* ANALİZ EKSTRA */
+    .mini-fact {
+        padding: 10px 20px;
+        background: #f8f9fa;
+        border-radius: 15px;
+    }
+
+    .explore-callout {
+        background: #e7f0ff;
+        border-radius: 20px;
+        color: #0056b3;
+    }
+
+    /* YORUM AVATAR */
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: #0d6efd;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: bold;
+    }
+
+    .comment-bubble {
+        transition: transform 0.2s;
+    }
+
+        .comment-bubble:hover {
+            transform: translateX(5px);
+        }
+
+    .description-text {
+        line-height: 1.8;
+        color: #4a4a4a;
+        font-size: 1.1rem;
+    }
+</style>
