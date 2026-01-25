@@ -1,8 +1,15 @@
 
+using SEYRÝ_ALA.Data.Interfaces;
+using SEYRÝ_ALA.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using SEYRÝ_ALA.Data; 
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Repository Kaydý
+builder.Services.AddScoped<ICityRepository, CityRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // EF Core DbContext kaydý (ConnectionStrings:DefaultConnection'ý kullanýr) // baðlantý dizesi doðrudan kodda deðil 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
