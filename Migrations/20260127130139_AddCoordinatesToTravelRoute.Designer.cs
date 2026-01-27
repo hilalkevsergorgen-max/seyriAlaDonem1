@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEYRİ_ALA.Data;
 
@@ -11,9 +12,11 @@ using SEYRİ_ALA.Data;
 namespace SEYRİ_ALA.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260127130139_AddCoordinatesToTravelRoute")]
+    partial class AddCoordinatesToTravelRoute
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -91,12 +94,6 @@ namespace SEYRİ_ALA.Migrations
 
                     b.Property<int>("NatureScore")
                         .HasColumnType("int");
-
-                    b.Property<double?>("Temperature")
-                        .HasColumnType("float");
-
-                    b.Property<string>("WeatherCondition")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
