@@ -12,5 +12,7 @@ namespace SEYRİ_ALA.Models
         public string Title { get; set; } = null!;
         public string Description { get; set; } = null!;
         public string? MapGeoJson { get; set; }
+        public double Latitude { get; set; }  // Enlem
+        public double Longitude { get; set; } // Boylam
     }
 }

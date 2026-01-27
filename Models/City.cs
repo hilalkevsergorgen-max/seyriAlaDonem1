@@ -26,5 +26,8 @@ namespace SEYRİ_ALA.Models
         public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
         // City.cs içine ekle
         public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+
+        public string? WeatherCondition { get; set; } // "Güneşli", "Yağmurlu" vb.
+        public double? Temperature { get; set; }      // Derece bilgisi
     }
 }
